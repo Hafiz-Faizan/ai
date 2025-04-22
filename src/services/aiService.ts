@@ -366,10 +366,10 @@ Return your response in this exact JSON format:
                 if (JSON.stringify(oldValue) !== JSON.stringify(value)) {
                   changes.push(`- Changed global style ${camelKey} from ${oldValue} to ${value}`);
                 }
-              }
-            });
-          }
-
+                }
+              });
+            }
+            
           // If we're specifically trying to update a button's color
           if (userMessage.toLowerCase().includes('button') && userMessage.toLowerCase().includes('color')) {
             // Find the button item
@@ -385,15 +385,15 @@ Return your response in this exact JSON format:
           }
 
           window.console.log('Final Updated Config:', JSON.stringify(updatedConfig, null, 2));
-          window.console.log('Changes:', changes);
-          window.console.log('=== DEBUGGING END ===');
-          
-          return {
+            window.console.log('Changes:', changes);
+            window.console.log('=== DEBUGGING END ===');
+            
+            return {
             message: changes.length > 0 
               ? `I've updated the hero configuration. Here are the changes:\n${changes.join('\n')}`
               : "No changes were necessary.",
-            heroConfig: updatedConfig
-          };
+              heroConfig: updatedConfig
+            };
         } else if (activeSection === 'navbar' && parsedResponse.navbarConfig) {
           // Process navbar updates similar to hero updates
           window.console.log('Processing navbar section updates...');

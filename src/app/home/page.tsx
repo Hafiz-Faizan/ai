@@ -5,44 +5,88 @@ import Navbar from '../../components/navbar';
 import Hero from '../../components/hero';
 import Link from 'next/link';
 import Collection from '@/components/Collection';
+import { ApiService } from '@/services/apiService';
+import { NavItem, NavbarStyles, HeroItem, HeroStyles, CollectionItem, CollectionStyles } from '@/types/website';
 
 export default function Home() {
-  const [navItems, setNavItems] = useState(null);
-  const [navStyles, setNavStyles] = useState(null);
-  const [heroItems, setHeroItems] = useState(null);
-  const [heroStyles, setHeroStyles] = useState(null);
-  const [collectionItems, setCollectionItems] = useState(null);
-  const [collectionStyles, setCollectionStyles] = useState(null);
+  const [navItems, setNavItems] = useState<NavItem[] | null>(null);
+  const [navStyles, setNavStyles] = useState<NavbarStyles | null>(null);
+  const [heroItems, setHeroItems] = useState<HeroItem[] | null>(null);
+  const [heroStyles, setHeroStyles] = useState<HeroStyles | null>(null);
+  const [collectionItems, setCollectionItems] = useState<CollectionItem[] | null>(null);
+  const [collectionStyles, setCollectionStyles] = useState<CollectionStyles | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
   const [showTips, setShowTips] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch data from MongoDB
   useEffect(() => {
-    // Load saved settings
-    const savedNavItems = localStorage.getItem('navItems');
-    const savedNavStyles = localStorage.getItem('navStyles');
-    const savedHeroItems = localStorage.getItem('heroItems');
-    const savedHeroStyles = localStorage.getItem('heroStyles');
-    const savedCollectionItems = localStorage.getItem('collectionItems');
-    const savedCollectionStyles = localStorage.getItem('collectionStyles');
-    
-    if (savedNavItems) setNavItems(JSON.parse(savedNavItems));
-    if (savedNavStyles) setNavStyles(JSON.parse(savedNavStyles));
-    if (savedHeroItems) setHeroItems(JSON.parse(savedHeroItems));
-    if (savedHeroStyles) setHeroStyles(JSON.parse(savedHeroStyles));
-    if (savedCollectionItems) setCollectionItems(JSON.parse(savedCollectionItems));
-    if (savedCollectionStyles) setCollectionStyles(JSON.parse(savedCollectionStyles));
-
-    // Check if this is the first visit to home page
-    if (!initialized) {
-      const hasVisitedHome = localStorage.getItem('hasVisitedHome');
-      if (hasVisitedHome === 'true') {
-        setShowWelcome(false);
-      } else {
-        setShowWelcome(true);
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Try to get data from API (MongoDB)
+        const websiteConfig = await ApiService.getWebsiteConfig();
+        
+        if (websiteConfig) {
+          // Set data from API response
+          setNavItems(websiteConfig.navItems || null);
+          setNavStyles(websiteConfig.navStyles || null);
+          setHeroItems(websiteConfig.heroItems || null);
+          setHeroStyles(websiteConfig.heroStyles || null);
+          setCollectionItems(websiteConfig.collectionItems || null);
+          setCollectionStyles(websiteConfig.collectionStyles || null);
+        } else {
+          // Fall back to localStorage if API fails
+          const savedNavItems = localStorage.getItem('navItems');
+          const savedNavStyles = localStorage.getItem('navStyles');
+          const savedHeroItems = localStorage.getItem('heroItems');
+          const savedHeroStyles = localStorage.getItem('heroStyles');
+          const savedCollectionItems = localStorage.getItem('collectionItems');
+          const savedCollectionStyles = localStorage.getItem('collectionStyles');
+          
+          if (savedNavItems) setNavItems(JSON.parse(savedNavItems));
+          if (savedNavStyles) setNavStyles(JSON.parse(savedNavStyles));
+          if (savedHeroItems) setHeroItems(JSON.parse(savedHeroItems));
+          if (savedHeroStyles) setHeroStyles(JSON.parse(savedHeroStyles));
+          if (savedCollectionItems) setCollectionItems(JSON.parse(savedCollectionItems));
+          if (savedCollectionStyles) setCollectionStyles(JSON.parse(savedCollectionStyles));
+        }
+        
+        // Check if this is the first visit to home page
+        if (!initialized) {
+          const hasVisitedHome = localStorage.getItem('hasVisitedHome');
+          if (hasVisitedHome === 'true') {
+            setShowWelcome(false);
+          } else {
+            setShowWelcome(true);
+          }
+          setInitialized(true);
+        }
+      } catch (error) {
+        console.error('Error fetching website data:', error);
+        
+        // Fall back to localStorage if API fails
+        const savedNavItems = localStorage.getItem('navItems');
+        const savedNavStyles = localStorage.getItem('navStyles');
+        const savedHeroItems = localStorage.getItem('heroItems');
+        const savedHeroStyles = localStorage.getItem('heroStyles');
+        const savedCollectionItems = localStorage.getItem('collectionItems');
+        const savedCollectionStyles = localStorage.getItem('collectionStyles');
+        
+        if (savedNavItems) setNavItems(JSON.parse(savedNavItems));
+        if (savedNavStyles) setNavStyles(JSON.parse(savedNavStyles));
+        if (savedHeroItems) setHeroItems(JSON.parse(savedHeroItems));
+        if (savedHeroStyles) setHeroStyles(JSON.parse(savedHeroStyles));
+        if (savedCollectionItems) setCollectionItems(JSON.parse(savedCollectionItems));
+        if (savedCollectionStyles) setCollectionStyles(JSON.parse(savedCollectionStyles));
+      } finally {
+        setIsLoading(false);
       }
-      setInitialized(true);
-    }
+    };
+
+    fetchData();
   }, [initialized]);
 
   const dismissWelcome = () => {
@@ -53,8 +97,18 @@ export default function Home() {
 
   return (
     <main className="min-h-screen">
+      {/* Loading State */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-white bg-opacity-80 z-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
+            <p className="text-lg text-gray-700">Loading your website...</p>
+          </div>
+        </div>
+      )}
+    
       {/* Welcome Modal */}
-      {showWelcome && (
+      {showWelcome && !isLoading && (
         <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full overflow-hidden animate-fadeIn">
             <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6">
@@ -117,7 +171,7 @@ export default function Home() {
       )}
 
       {/* Quick Tips Modal */}
-      {showTips && (
+      {showTips && !isLoading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" onClick={() => setShowTips(false)}>
           <div className="bg-white rounded-lg shadow-2xl max-w-md w-full overflow-hidden animate-fadeIn" onClick={e => e.stopPropagation()}>
             <div className="bg-gradient-to-r from-purple-600 to-indigo-700 p-4">
@@ -199,10 +253,14 @@ export default function Home() {
       {/* Preview Components */}
       <Navbar 
         isAdmin={false}
+        savedItems={navItems}
+        savedStyles={navStyles}
       />
       
       <Hero
         isAdmin={false}
+        savedItems={heroItems}
+        savedStyles={heroStyles}
       />
 
       <Collection 
